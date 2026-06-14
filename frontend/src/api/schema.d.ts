@@ -25,6 +25,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bookings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Удалить бронирование (админ).
+         *     Любой может удалить бронь по её ID.
+         *
+         *     Ошибки:
+         *     - 404 Not Found: бронь с таким ID не найдена.
+         */
+        delete: operations["Admin_deleteBooking"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/event-types": {
         parameters: {
             query?: never;
@@ -45,6 +68,29 @@ export interface paths {
          */
         post: operations["Admin_createEventType"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/bookings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Удалить бронирование (гость).
+         *     Любой может удалить бронь по её ID без аутентификации.
+         *
+         *     Ошибки:
+         *     - 404 Not Found: бронь с таким ID не найдена.
+         */
+        delete: operations["Public_deleteBooking"];
         options?: never;
         head?: never;
         patch?: never;
@@ -263,6 +309,38 @@ export interface operations {
             };
         };
     };
+    Admin_deleteBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID брони (UUID). */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     Admin_listEventTypes: {
         parameters: {
             query?: never;
@@ -316,6 +394,38 @@ export interface operations {
             };
             /** @description The request conflicts with the current state of the server. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    Public_deleteBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID брони (UUID). */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

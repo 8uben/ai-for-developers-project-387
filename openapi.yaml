@@ -40,6 +40,37 @@ paths:
                   $ref: '#/components/schemas/Booking'
       tags:
         - admin
+  /admin/bookings/{id}:
+    delete:
+      operationId: Admin_deleteBooking
+      description: |-
+        Удалить бронирование (админ).
+        Любой может удалить бронь по её ID.
+
+        Ошибки:
+        - 404 Not Found: бронь с таким ID не найдена.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID брони (UUID).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - admin
   /admin/event-types:
     post:
       operationId: Admin_createEventType
@@ -93,6 +124,37 @@ paths:
                   $ref: '#/components/schemas/EventType'
       tags:
         - admin
+  /public/bookings/{id}:
+    delete:
+      operationId: Public_deleteBooking
+      description: |-
+        Удалить бронирование (гость).
+        Любой может удалить бронь по её ID без аутентификации.
+
+        Ошибки:
+        - 404 Not Found: бронь с таким ID не найдена.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID брони (UUID).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - public
   /public/event-types:
     get:
       operationId: Public_listEventTypes
