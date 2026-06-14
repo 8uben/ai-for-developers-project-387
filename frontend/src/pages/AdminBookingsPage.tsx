@@ -10,6 +10,7 @@ import { formatDateTime } from "../lib/datetime";
 export function AdminBookingsPage() {
   const { data, loading, error, reload } = useApiQuery(fetchAdminBookings);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const sorted = useMemo(
     () => (data ? [...data].sort((a, b) => a.start.localeCompare(b.start)) : []),
@@ -53,6 +54,12 @@ export function AdminBookingsPage() {
                     size="md"
                     loading={cancelling === b.id}
                     onClick={() => handleCancel(b.id)}
+                    onMouseEnter={() => setHoveredId(b.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    style={{
+                      transition: "transform 0.2s, background-color 0.2s",
+                      transform: hoveredId === b.id ? "scale(1.12)" : "scale(1)",
+                    }}
                   >
                     <IconTrash size={18} />
                   </ActionIcon>
