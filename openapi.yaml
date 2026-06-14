@@ -1,0 +1,366 @@
+openapi: 3.0.0
+info:
+  title: Запись на звонок
+  version: 1.0.0
+  description: |-
+    «Запись на звонок» — упрощённый сервис бронирования времени по мотивам Cal.com.
+
+    Роли (без регистрации и авторизации):
+    - Владелец календаря: один заранее заданный профиль (Owner). Управляет типами
+    событий и просматривает предстоящие встречи. Операции под префиксом /admin.
+    - Гость: записывается на свободный слот без аккаунта. Операции под префиксом /public.
+
+    Базовые правила поведения (фиксируются контрактом):
+    1. Рабочее окно владельца и шаг сетки слотов определяются на стороне сервера.
+    Шаг сетки слотов равен длительности выбранного типа события (durationMinutes).
+    2. Окно записи — 14 дней, начиная с текущей даты.
+    3. Глобальная занятость: на одно и то же время нельзя создать две записи,
+    даже если это разные типы событий (нарушение → 409 Conflict).
+    4. Всё время передаётся в UTC (ISO 8601, utcDateTime).
+tags:
+  - name: admin
+  - name: public
+paths:
+  /admin/bookings:
+    get:
+      operationId: Admin_listBookings
+      description: |-
+        Список предстоящих встреч.
+        В одном списке показаны бронирования всех типов событий,
+        отсортированные по времени начала.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+      tags:
+        - admin
+  /admin/event-types:
+    post:
+      operationId: Admin_createEventType
+      description: |-
+        Создать тип события.
+        Владелец публикует новый шаблон встречи и задаёт его id (slug).
+
+        Ошибки:
+        - 400 Bad Request: невалидные данные (в т.ч. некорректный формат slug).
+        - 409 Conflict: тип события с таким id (slug) уже существует.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypeCreate'
+    get:
+      operationId: Admin_listEventTypes
+      description: Список типов событий, опубликованных владельцем.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+      tags:
+        - admin
+  /public/event-types:
+    get:
+      operationId: Public_listEventTypes
+      description: |-
+        Список видов брони, доступных гостю.
+        Возвращает название, описание и длительность.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+      tags:
+        - public
+  /public/event-types/{eventTypeId}/bookings:
+    post:
+      operationId: Public_createBooking
+      description: |-
+        Создать бронирование на выбранный слот.
+
+        Ошибки:
+        - 409 Conflict: слот уже занят (глобальная занятость по времени,
+        даже если бронь была на другой тип события).
+        - 400 Bad Request: слот вне окна записи (14 дней) либо не лежит
+        на сетке слотов / невалидные данные.
+        - 404 Not Found: тип события не найден.
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          description: Идентификатор типа события (slug), напр. "30min".
+          schema:
+            $ref: '#/components/schemas/EventTypeId'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+  /public/event-types/{eventTypeId}/slots:
+    get:
+      operationId: Public_listSlots
+      description: |-
+        Свободные слоты для выбранного типа события.
+
+        Слоты формируются на 14 дней, начиная с текущей даты, с шагом, равным
+        durationMinutes типа события. Занятые любым бронированием слоты
+        помечаются available: false (или исключаются — см. реализацию).
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          description: Идентификатор типа события (slug), напр. "30min".
+          schema:
+            $ref: '#/components/schemas/EventTypeId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - public
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - start
+        - end
+        - guestName
+        - guestEmail
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Уникальный идентификатор брони (UUID).
+          readOnly: true
+        eventTypeId:
+          allOf:
+            - $ref: '#/components/schemas/EventTypeId'
+          description: Идентификатор типа события (slug), к которому относится бронь.
+        start:
+          type: string
+          format: date-time
+          description: Начало встречи (UTC).
+        end:
+          type: string
+          format: date-time
+          description: Конец встречи (UTC) = start + durationMinutes типа события.
+        guestName:
+          type: string
+          description: Имя гостя.
+        guestEmail:
+          type: string
+          description: Email гостя.
+        createdAt:
+          type: string
+          format: date-time
+          description: Момент создания брони (UTC).
+          readOnly: true
+      description: Бронирование — запись гостя на конкретный слот.
+    BookingCreate:
+      type: object
+      required:
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Начало выбранного свободного слота (UTC).
+        guestName:
+          type: string
+          description: Имя гостя.
+        guestEmail:
+          type: string
+          description: Email гостя.
+      description: Данные для создания бронирования. Гость указывает слот и контактные данные.
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки, напр. "slot_taken", "out_of_window", "not_found".
+        message:
+          type: string
+          description: Человекочитаемое сообщение.
+      description: Единая модель ошибки для всех 4xx-ответов.
+    EventType:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/EventTypeId'
+          description: Человекочитаемый идентификатор (slug), заданный владельцем. Уникален.
+        title:
+          type: string
+          description: Название типа события.
+        description:
+          type: string
+          description: Описание типа события.
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Длительность встречи в минутах. Определяет шаг сетки слотов.
+      description: |-
+        Тип события — шаблон встречи, который публикует владелец.
+        Длительность задаёт шаг сетки доступных слотов для этого типа.
+    EventTypeCreate:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/EventTypeId'
+          description: Человекочитаемый идентификатор (slug), задаёт владелец.
+        title:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+      description: |-
+        Данные для создания типа события.
+        id — человекочитаемый идентификатор (slug), задаёт владелец; используется
+        в публичных URL и должен быть уникальным (дубль → 409 Conflict).
+    EventTypeId:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: ^[a-z0-9-]+$
+      description: |-
+        Человекочитаемый идентификатор типа события (slug).
+        Задаётся владельцем, должен быть уникальным, используется в публичных URL
+        (напр. /public/event-types/30min/slots). Только строчные латинские буквы,
+        цифры и дефис. Пример: "30min".
+    Owner:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Отображаемое имя владельца.
+        email:
+          type: string
+          description: Контактный email владельца (необязательно).
+      description: |-
+        Владелец календаря — единственный заранее заданный профиль.
+        Используется по умолчанию в админской части. Read-only.
+    Slot:
+      type: object
+      required:
+        - start
+        - end
+        - available
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Начало слота (UTC).
+        end:
+          type: string
+          format: date-time
+          description: Конец слота (UTC) = start + durationMinutes.
+        available:
+          type: boolean
+          description: Свободен ли слот (false, если уже занят любым бронированием).
+      description: |-
+        Слот — производная сущность, не хранится в БД.
+        Формируется из рабочего окна владельца и длительности типа события
+        в пределах окна записи (14 дней от текущей даты).

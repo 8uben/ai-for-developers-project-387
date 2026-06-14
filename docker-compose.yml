@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      RAILS_ENV: development
+      RAILS_LOG_TO_STDOUT: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/rails
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src:ro
+    depends_on:
+      - backend
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24

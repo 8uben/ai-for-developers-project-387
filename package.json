@@ -1,0 +1,19 @@
+{
+  "name": "call-booking-contract",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypeSpec API contract for the Call Booking service",
+  "scripts": {
+    "build": "tsp compile .",
+    "watch": "tsp compile . --watch",
+    "e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "e2e:ui": "npx playwright test --config=e2e/playwright.config.ts --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@typespec/compiler": "^0.65.0",
+    "@typespec/http": "^0.65.0",
+    "@typespec/openapi": "^0.65.0",
+    "@typespec/openapi3": "^0.65.0"
+  }
+}

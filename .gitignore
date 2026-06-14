@@ -1,0 +1,6 @@
+node_modules
+dist
+tsp-output
+*.local
+test-results
+playwright-report
