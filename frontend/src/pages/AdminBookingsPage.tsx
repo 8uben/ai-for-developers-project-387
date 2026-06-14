@@ -1,4 +1,5 @@
-import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { ActionIcon, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { fetchAdminBookings, deleteAdminBooking } from "../api/queries";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -46,15 +47,15 @@ export function AdminBookingsPage() {
                 </Stack>
                 <Group gap="xs">
                   <Badge variant="outline">{b.eventTypeId}</Badge>
-                  <Button
+                  <ActionIcon
                     color="red"
                     variant="light"
-                    size="xs"
+                    size="md"
                     loading={cancelling === b.id}
                     onClick={() => handleCancel(b.id)}
                   >
-                    Отменить
-                  </Button>
+                    <IconTrash size={18} />
+                  </ActionIcon>
                 </Group>
               </Group>
             </Card>
