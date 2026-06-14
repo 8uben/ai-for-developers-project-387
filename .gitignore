@@ -4,3 +4,4 @@ tsp-output
 *.local
 test-results
 playwright-report
+reports
