@@ -1,6 +1,6 @@
-import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
-import { useMemo } from "react";
-import { fetchAdminBookings } from "../api/queries";
+import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { useMemo, useState } from "react";
+import { fetchAdminBookings, deleteAdminBooking } from "../api/queries";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { QueryBoundary } from "../components/QueryBoundary";
 import { formatDateTime } from "../lib/datetime";
@@ -8,11 +8,19 @@ import { formatDateTime } from "../lib/datetime";
 /** Владелец: список предстоящих встреч всех типов в одном списке по времени. */
 export function AdminBookingsPage() {
   const { data, loading, error, reload } = useApiQuery(fetchAdminBookings);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const sorted = useMemo(
     () => (data ? [...data].sort((a, b) => a.start.localeCompare(b.start)) : []),
     [data],
   );
+
+  const handleCancel = async (id: string) => {
+    setCancelling(id);
+    await deleteAdminBooking(id);
+    setCancelling(null);
+    reload();
+  };
 
   return (
     <Stack>
@@ -36,7 +44,18 @@ export function AdminBookingsPage() {
                     {b.guestName} ({b.guestEmail})
                   </Text>
                 </Stack>
-                <Badge variant="outline">{b.eventTypeId}</Badge>
+                <Group gap="xs">
+                  <Badge variant="outline">{b.eventTypeId}</Badge>
+                  <Button
+                    color="red"
+                    variant="light"
+                    size="xs"
+                    loading={cancelling === b.id}
+                    onClick={() => handleCancel(b.id)}
+                  >
+                    Отменить
+                  </Button>
+                </Group>
               </Group>
             </Card>
           ))}

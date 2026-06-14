@@ -6,10 +6,9 @@ import {
   Stack,
   Text,
   TextInput,
-  
 } from "@mantine/core";
 import { useState } from "react";
-import { createBooking } from "../api/queries";
+import { createBooking, deleteBooking } from "../api/queries";
 import type { Booking, EventType, Slot } from "../api/client";
 import { formatDateTime } from "../lib/datetime";
 
@@ -57,12 +56,27 @@ export function BookingModal({
     setSuccess(result.data!);
   };
 
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    if (!success) return;
+    setCancelling(true);
+    const result = await deleteBooking(success.id);
+    setCancelling(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    handleClose();
+  };
+
   const handleClose = () => {
     setGuestName("");
     setGuestEmail("");
     setError(undefined);
     setSuccess(null);
     setSubmitting(false);
+    setCancelling(false);
     onClose();
   };
 
@@ -89,9 +103,19 @@ export function BookingModal({
           <Text size="sm">
             Гость: <b>{success.guestName}</b> ({success.guestEmail})
           </Text>
-          <Button color="orange" onClick={handleClose}>
-            Закрыть
-          </Button>
+          {error && (
+            <Alert color="red" title="Ошибка">
+              {error}
+            </Alert>
+          )}
+          <Group justify="space-between" mt="sm">
+            <Button color="red" variant="light" loading={cancelling} onClick={handleCancel}>
+              Отменить запись
+            </Button>
+            <Button color="orange" onClick={handleClose}>
+              Закрыть
+            </Button>
+          </Group>
         </Stack>
       ) : (
         <form onSubmit={handleSubmit}>

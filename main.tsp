@@ -199,6 +199,28 @@ namespace Admin {
   @route("/bookings")
   @get
   op listBookings(): Booking[];
+
+  /**
+   * Удалить бронирование (админ).
+   * Любой может удалить бронь по её ID.
+   *
+   * Ошибки:
+   *   - 404 Not Found: бронь с таким ID не найдена.
+   */
+  @route("/bookings/{id}")
+  @delete
+  op deleteBooking(
+    /** ID брони (UUID). */
+    @path id: string,
+  ):
+    | {
+        @statusCode statusCode: 200;
+        @body booking: Booking;
+      }
+    | {
+        @statusCode statusCode: 404;
+        @body error: Error;
+      };
 }
 
 // ============================================================================
@@ -270,6 +292,28 @@ namespace Public {
       }
     | {
         @statusCode statusCode: 409;
+        @body error: Error;
+      };
+
+  /**
+   * Удалить бронирование (гость).
+   * Любой может удалить бронь по её ID без аутентификации.
+   *
+   * Ошибки:
+   *   - 404 Not Found: бронь с таким ID не найдена.
+   */
+  @route("/bookings/{id}")
+  @delete
+  op deleteBooking(
+    /** ID брони (UUID). */
+    @path id: string,
+  ):
+    | {
+        @statusCode statusCode: 200;
+        @body booking: Booking;
+      }
+    | {
+        @statusCode statusCode: 404;
         @body error: Error;
       };
 }

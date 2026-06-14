@@ -71,4 +71,24 @@ RSpec.describe 'Public::Bookings', type: :request do
       expect(json['code']).to eq('out_of_window')
     end
   end
+
+  describe 'DELETE /public/bookings/:id' do
+    let(:event_type) { create(:event_type, id: 'delete-test', duration_minutes: 30) }
+    let!(:booking) { create(:booking, event_type: event_type, start: Time.current.utc.beginning_of_hour + 1.day + 10.hours) }
+
+    it 'deletes a booking' do
+      delete "/public/bookings/#{booking.id}"
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json['id']).to eq(booking.id)
+      expect(Booking.find_by(id: booking.id)).to be_nil
+    end
+
+    it 'returns 404 for non-existent booking' do
+      delete "/public/bookings/non-existent-id"
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

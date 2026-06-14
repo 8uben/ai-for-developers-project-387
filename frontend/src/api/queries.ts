@@ -68,3 +68,21 @@ export async function fetchAdminBookings(): Promise<Result<Booking[]>> {
   if (!data) return fail("Не удалось загрузить список встреч.");
   return ok(data);
 }
+
+// ---------- Отмена бронирования ----------
+
+export async function deleteBooking(id: string): Promise<Result<Booking>> {
+  const { data, error, response } = await api.DELETE("/public/bookings/{id}", {
+    params: { path: { id } },
+  });
+  if (error || !data) return fail(describeError(response.status, error));
+  return ok(data);
+}
+
+export async function deleteAdminBooking(id: string): Promise<Result<Booking>> {
+  const { data, error, response } = await api.DELETE("/admin/bookings/{id}", {
+    params: { path: { id } },
+  });
+  if (error || !data) return fail(describeError(response.status, error));
+  return ok(data);
+}

@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     get "/admin/event-types", to: "event_types#index"
     post "/admin/event-types", to: "event_types#create"
     get "/admin/bookings", to: "bookings#index"
+    delete "/admin/bookings/:id", to: "bookings#destroy"
   end
 
   scope module: "public" do
@@ -14,5 +15,7 @@ Rails.application.routes.draw do
       get "/slots", to: "slots#index"
       post "/bookings", to: "bookings#create"
     end
+
+    delete "/public/bookings/:id", to: "bookings#destroy"
   end
 end
